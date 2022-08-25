@@ -67,4 +67,18 @@ router.post('/:id/unlike', isLoggedIn, async (req, res, next) => {
   }
 });
 
+router.delete('/:id', isLoggedIn, async (req, res, next) => {
+  try {
+    const user = await User.findOne({ where: { id: req.user.id } });
+    if (user) {
+      await Post.destroy({ where: {id: req.params.id}});
+      res.send('delete success');
+    } else {
+      res.status(404).send('no user');
+    }
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
 module.exports = router;

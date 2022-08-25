@@ -41,8 +41,14 @@
             {% elif twit.User.id !== user.id %}
               <button class="twit-unlike">좋아요 취소</button>
             {% endif %}
-              <span class="like-number">좋아요 수 {{twit.Likers.length}}</span>
+            {% if twit.User.id == user.id %}
+            <button class="twit-delete">게시글 삭제하기</button>
+            {% endif %}
+            <span class="like-number">좋아요 수 {{twit.Likers.length}}</span>
 
+
+
+           
 
             <div class="twit-content">{{twit.content}}</div>
             {% if twit.img %}
@@ -139,6 +145,26 @@
           if (userId !== myId.value) {
             if (confirm('좋아요를 취소하시겠습니까?')) {
               axios.post(`/user/${twitId}/unlike`)
+                .then(() => {
+                  location.reload();
+                })
+                .catch((err) => {
+                  console.error(err);
+                });
+            }
+          }
+        }
+      });
+    });
+    document.querySelectorAll('.twit-delete').forEach(function(tag) {
+      tag.addEventListener('click', function() {
+        const myId = document.querySelector('#my-id');
+        if (myId) {
+          const userId = tag.parentNode.querySelector('.twit-user-id').value;
+          const twitId = tag.parentNode.querySelector('.twit-id').value;
+          if (userId == myId.value) {
+            if (confirm('게시글을 삭제 하시겠습니까?')) {
+              axios.delete(`/user/${twitId}`)
                 .then(() => {
                   location.reload();
                 })
