@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 
 const router = express.Router();
-const URL = 'http://localhost:8002/v2';
+const URL = 'http://localhost:8003/v2';
 
 axios.defaults.headers.origin = 'http://localhost:4000'; // origin 헤더 추가
 const request = async (req, api) => {
@@ -46,6 +46,24 @@ router.get('/search/:hashtag', async (req, res, next) => {
       console.error(error);
       next(error);
     }
+  }
+});
+router.get('/myfollowers', async (req, res, next) => {
+  try {
+    const result = await request(req, '/followers/my');
+    res.json(result.data);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+router.get('/myfollowings', async (req, res, next) => {
+  try {
+    const result = await request(req, '/followings/my');
+    res.json(result.data);
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
 });
 

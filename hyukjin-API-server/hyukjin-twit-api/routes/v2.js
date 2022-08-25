@@ -104,4 +104,39 @@ router.get('/posts/hashtag/:title', verifyToken, apiLimiter, async (req, res) =>
   }
 });
 
+router.get('/followers/my', apiLimiter, verifyToken, async (req, res) => {
+  try{
+    const user = await User.findOne({ where: {id: req.decoded.id }});
+    const followers = await user.getFollowers();
+    return res.json({
+      code: 200,
+      payload: followers
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      code: 500,
+      message: '서버 에러',
+    });
+  }
+});
+
+router.get('/followings/my', apiLimiter, verifyToken, async (req, res) => {
+  try{
+    const user = await User.findOne({ where: {id: req.decoded.id }});
+    const followers = await user.getFollowings();
+    return res.json({
+      code: 200,
+      payload: followers
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      code: 500,
+      message: '서버 에러',
+    });
+  }
+});
+
+
 module.exports = router;

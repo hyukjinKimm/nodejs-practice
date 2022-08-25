@@ -49,6 +49,9 @@ module.exports = class User extends Sequelize.Model {
       as: 'Followings',
       through: 'Follow',
     });
-    db.User.hasMany(db.Domain);
+    db.User.belongsToMany(db.Post, {
+      as: 'Likings',
+      through: 'UserLikePost',    
+    });
   }
 };
