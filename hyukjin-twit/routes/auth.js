@@ -45,6 +45,30 @@ router.post('/login', isNotLoggedIn, (req, res, next) => {
   })(req, res, next); // 미들웨어 내의 미들웨어에는 (req, res, next)를 붙입니다.
 });
 
+router.post('/edit', isLoggedIn, async (req, res, next) => {
+  const { nick, password } = req.body;
+  try {
+
+    const exUser = await User.findOne({ where: { id: req.user.id } });
+    if (!exUser) {
+      return res.redirect('/edit?error=not exist');
+    }
+    const hash = await bcrypt.hash(password, 12);
+    await User.update({
+      password: hash,
+      nick: nick
+    }, {
+      where: { id: req.user.id },
+    });
+
+    return res.redirect('/');
+  } catch (error) {
+    console.error(error);
+    return next(error);
+  }
+});
+
+
 router.get('/logout', isLoggedIn, (req, res) => {
   req.logout();
   req.session.destroy();

@@ -15,6 +15,9 @@ router.use((req, res, next) => {
 router.get('/profile', isLoggedIn, (req, res) => {
   res.render('profile', { title: '내 정보 - NodeBird' });
 });
+router.get('/editprofile', isLoggedIn, (req, res) => {
+  res.render('editprofile', { title: '정보변경 - NodeBird' });
+});
 
 router.get('/join', isNotLoggedIn, (req, res) => {
   res.render('join', { title: '회원가입 - NodeBird' });
