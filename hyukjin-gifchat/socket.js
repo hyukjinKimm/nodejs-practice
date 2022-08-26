@@ -28,17 +28,25 @@ module.exports = (server, app, sessionMiddleware) => {
     const roomId = referer
       .split('/')[referer.split('/').length - 1]
       .replace(/\?.+/, '');
+
     socket.join(roomId);  // chat 네임스페이스에서 roomId 방에 사용자를 집어넣는다
+    const currentRoom = socket.adapter.rooms[roomId];  // socekt.adapter.rooms 에는 현재 네임스페이스의 방의 목록들이 나와있다.
+    const userCount = currentRoom ? currentRoom.length : 0;
+    console.log('chat 네임스페이스 접속 시 userCount', userCount)
     socket.to(roomId).emit('join', { // roomId 방에 있는 사람들에게 메시지를 보낸다.
       user: 'system',
       chat: `${req.session.color}님이 입장하셨습니다.`,
+      userCount: userCount
     });
-
+    socket.on('initialize', (data) => {
+      socket.emit('userCount', {userCount});
+    })
     socket.on('disconnect', () => {
       console.log('chat 네임스페이스 접속 해제');
       socket.leave(roomId);  // 사용자가 roomId 방을 떠나게 한다.
       const currentRoom = socket.adapter.rooms[roomId];  // socekt.adapter.rooms 에는 현재 네임스페이스의 방의 목록들이 나와있다.
       const userCount = currentRoom ? currentRoom.length : 0;
+      console.log('chat네임스페이스 연결 종류시 userCOunt', userCount);
       if (userCount === 0) { // 유저가 0명이면 방 삭제
         const signedCookie = cookie.sign(req.signedCookies['connect.sid'], process.env.COOKIE_SECRET);
         const connectSID = `${signedCookie}`;
@@ -57,6 +65,7 @@ module.exports = (server, app, sessionMiddleware) => {
         socket.to(roomId).emit('exit', {
           user: 'system',
           chat: `${req.session.color}님이 퇴장하셨습니다.`,
+          userCount: userCount
         });
       }
     });

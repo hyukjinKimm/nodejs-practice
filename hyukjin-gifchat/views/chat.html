@@ -5,6 +5,7 @@
   <a href="/" id="exit-btn">방 나가기</a>
   <fieldset>
     <legend>채팅 내용</legend>
+    <div>참여자 수 <span id="userCount">0</span></div>
     <div id="chat-list">
       {% for chat in chats %}
         {% if chat.user === user %}
@@ -45,7 +46,14 @@
     const socket = io.connect('http://localhost:8005/chat', {
       path: '/socket.io',
     });
+    socket.emit('initialize', "give me userCount");
+    socket.on('userCount', (data) => {
+      const userCount = document.querySelector('#userCount');
+      userCount.innerText  = data.userCount;
+    })
     socket.on('join', function (data) {
+      const userCount = document.querySelector('#userCount');
+      userCount.innerText  = data.userCount;
       const div = document.createElement('div');
       div.classList.add('system');
       const chat = document.createElement('div');
@@ -54,6 +62,8 @@
       document.querySelector('#chat-list').appendChild(div);
     });
     socket.on('exit', function (data) {
+      const userCount = document.querySelector('#userCount');
+      userCount.innerText  = data.userCount;
       const div = document.createElement('div');
       div.classList.add('system');
       const chat = document.createElement('div');
