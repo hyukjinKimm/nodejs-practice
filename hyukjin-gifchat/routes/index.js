@@ -10,6 +10,7 @@ const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
+    
     const rooms = await Room.find({});
     res.render('main', { rooms, title: 'GIF 채팅방' });
   } catch (error) {
@@ -67,6 +68,27 @@ router.get('/room/:id', async (req, res, next) => {
     return next(error);
   }
 });
+
+router.get('/room/:id/update', async (req ,res, next) => {
+  try{
+    
+    const max = req.app.get('max')
+    const room = await Room.findOne({ _id: req.params.id });
+    const io = req.app.get('io');
+    const people = Object.keys( io.of('/chat').adapter.rooms[req.params.id].sockets);
+    const gone = req.session.color;
+    if (room.owner === gone){ // 방장이 방을 나감
+      const newOnwer = max.get(people[1]);
+      await Room.update({_id: req.params.id }, { owner: newOnwer });
+      res.end('방장  업데이트 성공');
+    } else { // 방장이 나간게 아님
+      res.end('방장 업데이트 성공');
+    }
+    
+  } catch (e) {
+    console.error()
+  }
+})
 
 router.delete('/room/:id', async (req, res, next) => {
   try {

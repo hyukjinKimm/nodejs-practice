@@ -36,7 +36,7 @@ module.exports = (server, app, sessionMiddleware) => {
    
     socket.join(roomId);  // chat 네임스페이스에서 roomId 방에 사용자를 집어넣는다
     max.set(req.session.color, socket.id);
-   
+    max.set(socket.id, req.session.color);
     const currentRoom = socket.adapter.rooms[roomId];  // socekt.adapter.rooms 에는 현재 네임스페이스의 방의 목록들이 나와있다.
 
     const userCount = currentRoom ? currentRoom.length : 0;
@@ -51,15 +51,17 @@ module.exports = (server, app, sessionMiddleware) => {
     })
     
     socket.on('disconnect', () => {
+    
       max.delete(req.session.color);
+      max.delete(socket.id);
       console.log('chat 네임스페이스 접속 해제');
       socket.leave(roomId);  // 사용자가 roomId 방을 떠나게 한다.
       const currentRoom = socket.adapter.rooms[roomId];  // socekt.adapter.rooms 에는 현재 네임스페이스의 방의 목록들이 나와있다.
       const userCount = currentRoom ? currentRoom.length : 0;
-      
+      const signedCookie = cookie.sign(req.signedCookies['connect.sid'], process.env.COOKIE_SECRET);
+      const connectSID = `${signedCookie}`; 
       if (userCount === 0) { // 유저가 0명이면 방 삭제
-        const signedCookie = cookie.sign(req.signedCookies['connect.sid'], process.env.COOKIE_SECRET);
-        const connectSID = `${signedCookie}`;
+
         axios.delete(`http://localhost:8005/room/${roomId}`, {
           headers: {
             Cookie: `connect.sid=s%3A${connectSID}`  // 세션의 서명은 앞에 s%3A 를 붙여야 한다.
@@ -76,7 +78,8 @@ module.exports = (server, app, sessionMiddleware) => {
           user: 'system',
           chat: `${req.session.color}님이 퇴장하셨습니다.`,
           userCount: userCount
-        });
+        })
+      
       }
     });
     socket.on('chat', (data) => {

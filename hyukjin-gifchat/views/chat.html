@@ -128,6 +128,7 @@
       document.querySelector('#chat-list').appendChild(div);
     });
 
+
     document.querySelector('#chat-form').addEventListener('submit', function (e) {
       e.preventDefault();
       if (e.target.chat.value) {
@@ -177,6 +178,16 @@
       axios.post('/room/{{room._id}}/gif', formData)
         .then(() => {
           e.target.file = null;
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
+   
+    document.querySelector('#exit-btn').addEventListener('click', function (e) {
+      axios.get('/room/{{room._id}}/update')
+        .then(() => {
+          console.log('방장 업데이트 작업 성공');
         })
         .catch((err) => {
           console.error(err);
