@@ -53,7 +53,7 @@ router.get('/room/:id', async (req, res, next) => {
     if (rooms && rooms[req.params.id] && room.max <= rooms[req.params.id].length) {
       return res.redirect('/?error=허용 인원이 초과하였습니다.');
     }
-    const chats = await Chat.find({ room: room._id }).sort('createdAt');
+    const chats = await Chat.find({ room: room._id, whisperto: ""  }).sort('createdAt');
 
     return res.render('chat', {
       room,
@@ -89,6 +89,7 @@ router.post('/room/:id/chat', async (req, res, next) => {
       user: req.session.color,
       chat: req.body.chat,
     });
+
     req.app.get('io').of('/chat').to(req.params.id).emit('chat', chat);
     // chat네임스페이스의 req.params.id 방에 들어있는 사람들에게 보내는 메시지
     res.send('ok');
@@ -98,6 +99,33 @@ router.post('/room/:id/chat', async (req, res, next) => {
   }
 });
 
+router.post('/room/:id/whisperchat', async (req, res, next) => {
+  try {
+    //귓속말을 보낸다.
+    //1. 방안에 그 사람이 있는지 확인한다 . // 프론트에서 처리 
+    if(req.app.get('max').get(req.body.whisperto)){ // 방에 들어있음
+      const chat = await Chat.create({
+        room: req.params.id,
+        user: req.session.color, // 보낸 사람
+        chat: req.body.chat,
+        whisperto: req.body.whisperto, // 보낼 사람
+      });
+      const io = req.app.get('io');
+      const socketid1 = req.app.get('max').get(req.body.whisperto).slice(6);
+      io.to(socketid1).emit('chat', chat);
+
+      const socketid2 = req.app.get('max').get(req.session.color).slice(6);
+      io.to(socketid2).emit('chat', chat);
+      // 귓속말은 전역 스페이스 메시지로 보내짐
+      res.send('ok');
+    } else { // 방에 없음
+      res.end('no current user')
+    }
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
 try {
   fs.readdirSync('uploads');
 } catch (err) {

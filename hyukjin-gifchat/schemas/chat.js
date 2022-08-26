@@ -12,6 +12,10 @@ const chatSchema = new Schema({
     type: String,
     required: true,
   },
+  whisperto: {
+    type: String,
+    default: ""
+  },
   chat: String,
   gif: String,
   createdAt: {
