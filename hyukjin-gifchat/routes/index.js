@@ -61,6 +61,7 @@ router.get('/room/:id', async (req, res, next) => {
       title: room.title,
       chats,
       user: req.session.color,
+      owner: room.owner,
   
     });
   } catch (error) {
@@ -75,15 +76,30 @@ router.get('/room/:id/update', async (req ,res, next) => {
     const max = req.app.get('max')
     const room = await Room.findOne({ _id: req.params.id });
     const io = req.app.get('io');
+  
     const people = Object.keys( io.of('/chat').adapter.rooms[req.params.id].sockets);
     const gone = req.session.color;
     if (room.owner === gone){ // 방장이 방을 나감
-      const newOnwer = max.get(people[1]);
+      const newOnwer = max.get(people[0]);
       await Room.update({_id: req.params.id }, { owner: newOnwer });
-      res.end('방장  업데이트 성공');
+  
+      res.json({ newOnwer })
     } else { // 방장이 나간게 아님
       res.end('방장 업데이트 성공');
     }
+    
+  } catch (e) {
+    console.error()
+  }
+})
+
+router.get('/room/:id/owner', async (req ,res, next) => {
+  try{
+    
+   
+    const room = await Room.findOne({ _id: req.params.id });
+    console.log(room.owner)
+    res.json({ owner : room.owner});
     
   } catch (e) {
     console.error()

@@ -6,6 +6,7 @@
   <fieldset>
     <legend>채팅 내용</legend>
     <div>참여자 수 <span id="userCount">0</span></div>
+    <div>방장 <span id="owner">{{owner}}</span></div>
     <div id="chat-list">
       {% for chat in chats %}
         {% if chat.user === user  %}
@@ -67,6 +68,9 @@
       document.querySelector('#chat-list').appendChild(div);
     });
     socket.on('exit', function (data) {
+      
+      const owner = document.querySelector('#owner');
+      owner.innerText = data.owner;
       const userCount = document.querySelector('#userCount');
       userCount.innerText  = data.userCount;
       const div = document.createElement('div');
@@ -184,7 +188,7 @@
         });
     });
    
-    document.querySelector('#exit-btn').addEventListener('click', function (e) {
+    document.querySelector('#exit-btn').addEventListener('click',  function (e) {
       axios.get('/room/{{room._id}}/update')
         .then(() => {
           console.log('방장 업데이트 작업 성공');
@@ -201,6 +205,18 @@
     } 
     }
     document.onkeydown = NotReload;
-
+    window.onhashchange  = function(event) {
+      if ( event.persisted || (window.performance && window.performance.navigation.type == 2)) {
+      // Back Forward Cache로 브라우저가 로딩될 경우 혹은 브라우저 뒤로가기 했을 경우
+      alert('hi')
+      axios.get('/room/{{room._id}}/update')
+        .then(() => {
+          console.log('방장 업데이트 작업 성공');
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+      }
+    }
   </script>
 {% endblock %}
