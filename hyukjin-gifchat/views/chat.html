@@ -46,6 +46,7 @@
     <input type="text" id="whisperchat" name="whisperchat">
     <button type="submit">귓속말 전송</button>
   </form>
+  <div id="forceDisconnet"></div>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -68,9 +69,40 @@
       document.querySelector('#chat-list').appendChild(div);
     });
     socket.on('exit', function (data) {
-      
+     
+
+
+
       const owner = document.querySelector('#owner');
       owner.innerText = data.owner;
+      if(owner.innerText === '{{user}}'){
+        const forceDisconnect =   document.querySelector('#forceDisconnet');
+        forceDisconnect.innerHTML = `
+        <form action="/forceDisconnect" id="forceDisconnectform" method="post">
+      <input type="text" id="subject" name="subject" placeholder="강퇴할 사람의 id">
+      <button type="submit">강퇴하기</button>
+      </form>   
+        `
+      }
+        const forceDisconnectform = document.querySelector('#forceDisconnectform');
+        if(forceDisconnectform) {
+          document.querySelector('#forceDisconnectform').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (e.target.subject.value) {
+          axios.post('/room/{{room._id}}/forceDisconnet', {
+            subject: e.target.subject.value
+          })
+            .then(() => {
+              e.target.subject.value = '';
+            })
+            .catch((err) => {
+              console.error(err);
+            });
+        }
+      });
+        }
+
+
       const userCount = document.querySelector('#userCount');
       userCount.innerText  = data.userCount;
       const div = document.createElement('div');
@@ -132,6 +164,11 @@
       document.querySelector('#chat-list').appendChild(div);
     });
 
+    socket2.on('forceDisconnect', function (data) {
+          console.log('oihdd')
+          window.location = 'http://localhost:8005/kick'
+
+        })
 
     document.querySelector('#chat-form').addEventListener('submit', function (e) {
       e.preventDefault();
@@ -187,16 +224,8 @@
           console.error(err);
         });
     });
-   
-    document.querySelector('#exit-btn').addEventListener('click',  function (e) {
-      axios.get('/room/{{room._id}}/update')
-        .then(() => {
-          console.log('방장 업데이트 작업 성공');
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-    });
+
+
     function NotReload(){
     if( (event.ctrlKey == true && (event.keyCode == 78 || event.keyCode == 82)) || (event.keyCode == 116) ) {
         event.keyCode = 0;
@@ -205,18 +234,39 @@
     } 
     }
     document.onkeydown = NotReload;
-    window.onhashchange  = function(event) {
-      if ( event.persisted || (window.performance && window.performance.navigation.type == 2)) {
-      // Back Forward Cache로 브라우저가 로딩될 경우 혹은 브라우저 뒤로가기 했을 경우
-      alert('hi')
-      axios.get('/room/{{room._id}}/update')
-        .then(() => {
-          console.log('방장 업데이트 작업 성공');
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-      }
+
+    const owner = document.querySelector('#owner').innerText;
+
+    if(owner === '{{user}}'){
+      const forceDisconnect =   document.querySelector('#forceDisconnet');
+      forceDisconnect.innerHTML = `
+      <form action="/forceDisconnect" id="forceDisconnectform" method="post">
+    <input type="text" id="subject" name="subject" placeholder="강퇴할 사람의 id">
+    <button type="submit">강퇴하기</button>
+  </form>   
+      `
     }
+
+    const forceDisconnectform =  document.querySelector('#forceDisconnectform');
+    if(forceDisconnectform) {
+      forceDisconnectform.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (e.target.subject.value) {
+          axios.post('/room/{{room._id}}/forceDisconnet', {
+            subject: e.target.subject.value
+          })
+            .then(() => {
+              e.target.subject.value = '';
+            })
+            .catch((err) => {
+              console.error(err);
+            });
+        }
+      });
+    }
+
+  
+
+
   </script>
 {% endblock %}

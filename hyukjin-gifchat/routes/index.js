@@ -18,7 +18,16 @@ router.get('/', async (req, res, next) => {
     next(error);
   }
 });
+router.get('/kick', (req, res, next) => {
+  try {
+    
+    res.end('you are kicked by room owner');
 
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
 router.get('/room', (req, res) => {
   res.render('room', { title: 'GIF 채팅방 생성' });
 });
@@ -92,6 +101,27 @@ router.get('/room/:id/update', async (req ,res, next) => {
     console.error()
   }
 })
+
+
+router.post('/room/:id/forceDisconnet', async (req, res, next) => {
+  try {
+    const room = await Room.findOne({ _id: req.params.id });
+    const max = req.app.get('max');
+    if(room.owner === req.session.color ) {
+      const io = req.app.get('io');
+      const socketid = max.get(req.body.subject).slice(6);;
+      console.log(socketid);
+      io.to(socketid).emit('forceDisconnect', {'message': '너 강퇴'});
+      res.end('ok')
+    } else {
+      res.end('당신은 방장이 아닙니다.')
+    }
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
 
 router.get('/room/:id/owner', async (req ,res, next) => {
   try{
