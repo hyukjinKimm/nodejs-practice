@@ -3,15 +3,16 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const Room = require('../schemas/room');
-const Chat = require('../schemas/chat');
+const Room = require('../models/room');
+const Chat = require('../models/chat');
+
 
 const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
     
-    const rooms = await Room.find({});
+    const rooms = await  Room.findAll({})
     res.render('main', { rooms, title: 'GIF 채팅방' });
   } catch (error) {
     console.error(error);
@@ -28,6 +29,7 @@ router.get('/kick', (req, res, next) => {
     next(error);
   }
 });
+
 router.get('/room', (req, res) => {
   res.render('room', { title: 'GIF 채팅방 생성' });
 });
@@ -42,7 +44,7 @@ router.post('/room', async (req, res, next) => {
     });
     const io = req.app.get('io');
     io.of('/room').emit('newRoom', newRoom);  // room 네임 스페이스에 접속한 사람들에게 보내는 메시지
-    res.redirect(`/room/${newRoom._id}?password=${req.body.password}`);
+    res.redirect(`/room/${newRoom.id}?password=${req.body.password}`);
   } catch (error) {
     console.error(error);
     next(error);
@@ -51,7 +53,9 @@ router.post('/room', async (req, res, next) => {
 
 router.get('/room/:id', async (req, res, next) => {
   try {
-    const room = await Room.findOne({ _id: req.params.id });
+    console.log(req.params.id);
+    const room = await Room.findOne({ where : {id: req.params.id} });
+    console.log('room 의 id', room.id);
     const io = req.app.get('io');
     if (!room) {
       return res.redirect('/?error=존재하지 않는 방입니다.');
@@ -63,8 +67,14 @@ router.get('/room/:id', async (req, res, next) => {
     if (rooms && rooms[req.params.id] && room.max <= rooms[req.params.id].length) {
       return res.redirect('/?error=허용 인원이 초과하였습니다.');
     }
-    const chats = await Chat.find({ room: room._id, whisperto: ""  }).sort('createdAt');
-
+    const chats = await Chat.findOne({
+      where: {
+        RoomId: req.params.id,
+        whisperto : ""
+      },
+      order: [['createdAt', 'ASC']]
+    })
+    
     return res.render('chat', {
       room,
       title: room.title,
@@ -83,14 +93,14 @@ router.get('/room/:id/update', async (req ,res, next) => {
   try{
     
     const max = req.app.get('max')
-    const room = await Room.findOne({ _id: req.params.id });
+    const room = await Room.findOne({ where : {id: req.params.id} });
     const io = req.app.get('io');
   
     const people = Object.keys( io.of('/chat').adapter.rooms[req.params.id].sockets);
     const gone = req.session.color;
     if (room.owner === gone){ // 방장이 방을 나감
       const newOnwer = max.get(people[0]);
-      await Room.update({_id: req.params.id }, { owner: newOnwer });
+      await Room.update( { owner: newOnwer }, {  where : { id: req.params.id }});
   
       res.json({ newOnwer })
     } else { // 방장이 나간게 아님
@@ -105,12 +115,12 @@ router.get('/room/:id/update', async (req ,res, next) => {
 
 router.post('/room/:id/forceDisconnet', async (req, res, next) => {
   try {
-    const room = await Room.findOne({ _id: req.params.id });
+    const room = await Room.findOne({ where : {id: req.params.id} });
     const max = req.app.get('max');
     if(room.owner === req.session.color ) {
       const io = req.app.get('io');
       const socketid = max.get(req.body.subject).slice(6);;
-      console.log(socketid);
+      
       io.to(socketid).emit('forceDisconnect', {'message': '너 강퇴'});
       res.end('ok')
     } else {
@@ -127,8 +137,8 @@ router.get('/room/:id/owner', async (req ,res, next) => {
   try{
     
    
-    const room = await Room.findOne({ _id: req.params.id });
-    console.log(room.owner)
+    const room = await Room.findOne({ where: {id: req.params.id} });
+  
     res.json({ owner : room.owner});
     
   } catch (e) {
@@ -138,8 +148,16 @@ router.get('/room/:id/owner', async (req ,res, next) => {
 
 router.delete('/room/:id', async (req, res, next) => {
   try {
-    await Room.remove({ _id: req.params.id });
-    await Chat.remove({ room: req.params.id });
+    await Room.destroy({
+      where: {
+        id: req.params.id
+      }
+    })
+    await Chat.destroy({
+      where: {
+        RoomId: req.params.id
+      }
+    })
     res.send('ok');
     setTimeout(() => {
       req.app.get('io').of('/room').emit('removeRoom', req.params.id);
@@ -153,7 +171,7 @@ router.delete('/room/:id', async (req, res, next) => {
 router.post('/room/:id/chat', async (req, res, next) => {
   try {
     const chat = await Chat.create({
-      room: req.params.id,
+      RoomId: req.params.id,
       user: req.session.color,
       chat: req.body.chat,
     });
@@ -173,7 +191,7 @@ router.post('/room/:id/whisperchat', async (req, res, next) => {
     //1. 방안에 그 사람이 있는지 확인한다 . // 프론트에서 처리 
     if(req.app.get('max').get(req.body.whisperto)){ // 방에 들어있음
       const chat = await Chat.create({
-        room: req.params.id,
+        RoomId: req.params.id,
         user: req.session.color, // 보낸 사람
         chat: req.body.chat,
         whisperto: req.body.whisperto, // 보낼 사람
@@ -215,7 +233,7 @@ const upload = multer({
 router.post('/room/:id/gif', upload.single('gif'), async (req, res, next) => {
   try {
     const chat = await Chat.create({
-      room: req.params.id,
+      RoomId: req.params.id,
       user: req.session.color,
       gif: req.file.filename,
     });

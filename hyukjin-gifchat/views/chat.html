@@ -50,9 +50,11 @@
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    console.log('get/{{room.id}}')
     const socket = io.connect('http://localhost:8005/chat', {
       path: '/socket.io',
     });
+
     socket.emit('initialize', "give me userCount");
     socket.on('userCount', (data) => {
       const userCount = document.querySelector('#userCount');
@@ -75,7 +77,7 @@
 
       const owner = document.querySelector('#owner');
       owner.innerText = data.owner;
-      if(owner.innerText === '{{user}}'){
+      if(owner.innerText === `{{user}}`){
         const forceDisconnect =   document.querySelector('#forceDisconnet');
         forceDisconnect.innerHTML = `
         <form action="/forceDisconnect" id="forceDisconnectform" method="post">
@@ -89,7 +91,7 @@
           document.querySelector('#forceDisconnectform').addEventListener('submit', function (e) {
         e.preventDefault();
         if (e.target.subject.value) {
-          axios.post('/room/{{room._id}}/forceDisconnet', {
+          axios.post(`/room/{{room.id}}/forceDisconnet`, {
             subject: e.target.subject.value
           })
             .then(() => {
@@ -113,9 +115,9 @@
       document.querySelector('#chat-list').appendChild(div);
     });
     socket.on('chat', function (data) {
-      
+     
       const div = document.createElement('div');
-      if (data.user === '{{user}}') {
+      if (data.user === `{{user}}`) {
         div.classList.add('mine');
       } else {
         div.classList.add('other');
@@ -143,7 +145,7 @@
     socket2.on('chat', function (data) {
       
       const div = document.createElement('div');
-      if (data.user === '{{user}}') {
+      if (data.user === `{{user}}`) {
         div.classList.add('mine');
       } else {
         div.classList.add('other');
@@ -172,8 +174,9 @@
 
     document.querySelector('#chat-form').addEventListener('submit', function (e) {
       e.preventDefault();
+      console.log('{{room.id}}')
       if (e.target.chat.value) {
-        axios.post('/room/{{room._id}}/chat', {
+        axios.post(`/room/{{room.id}}/chat`, {
           chat: this.chat.value,
         })
           .then(() => {
@@ -188,7 +191,7 @@
       e.preventDefault();
       if (e.target.whisperchat.value) {
         if(e.target.whisperto.value){
-          axios.post('/room/{{room._id}}/whisperchat', {
+          axios.post(`/room/{{room.id}}/whisperchat`, {
           chat: this.whisperchat.value,
           whisperto: this.whisperto.value
         })
@@ -216,7 +219,7 @@
       console.log(e.target.files);
       const formData = new FormData();
       formData.append('gif', e.target.files[0]);
-      axios.post('/room/{{room._id}}/gif', formData)
+      axios.post(`/room/{{room.id}}/gif`, formData)
         .then(() => {
           e.target.file = null;
         })
@@ -237,7 +240,7 @@
 
     const owner = document.querySelector('#owner').innerText;
 
-    if(owner === '{{user}}'){
+    if(owner === `{{user}}`){
       const forceDisconnect =   document.querySelector('#forceDisconnet');
       forceDisconnect.innerHTML = `
       <form action="/forceDisconnect" id="forceDisconnectform" method="post">
@@ -252,7 +255,7 @@
       forceDisconnectform.addEventListener('submit', function (e) {
         e.preventDefault();
         if (e.target.subject.value) {
-          axios.post('/room/{{room._id}}/forceDisconnet', {
+          axios.post(`/room/{{room.id}}/forceDisconnet`, {
             subject: e.target.subject.value
           })
             .then(() => {

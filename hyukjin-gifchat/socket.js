@@ -30,10 +30,11 @@ module.exports = (server, app, sessionMiddleware) => {
     console.log('chat 네임스페이스에 접속');
     const req = socket.request;
     const { headers: { referer } } = req; // req.header.referer
+    
     const roomId = referer
       .split('/')[referer.split('/').length - 1]
       .replace(/\?.+/, '');
-   
+    console.log(roomId);
     socket.join(roomId);  // chat 네임스페이스에서 roomId 방에 사용자를 집어넣는다
     max.set(req.session.color, socket.id);
     max.set(socket.id, req.session.color);
